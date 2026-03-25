@@ -261,79 +261,6 @@ def create_patch_antenna_external(
     boolean_history = f""" Solid.Subtract "component1:patch", "component1:inset2" """
     project.model3d.add_to_history("Create subtract inset2", boolean_history)
 
-
-
-    # Step 10: Add port
-    print("Step 10: Adding port...")
-
-    if port_type == "Waveguide":
-        port_history = f"""
-        With Port
-            .Reset
-            .Name "Port1"
-            .Type "Waveguide"
-            .Component "component1"
-            .Position " -26, -26, 0"
-            .Xrange "- 27", " 27"
-            .Yrange "- 27", " 27"
-            .Zrange "- {substrate_thickness/2}", " {substrate_thickness/2}"
-            .Mode "{excitation_mode}"
-            .Normal "Z"
-        End With
-        """
-        print(f"  Port type: Waveguide")
-        print(f"  Excitation mode: {excitation_mode}")
-    else:
-        port_history = f"""
-        With Port
-            .Reset
-            .Name "Port1"
-            .Type "Discrete"
-            .Component "component1"
-            .Position " -26, -26, 0"
-            .Xrange "- 27", " 27"
-            .Yrange "- 27", " 27"
-            .Zrange "- {substrate_thickness/2}", " {substrate_thickness/2}"
-            .Mode "Coaxial"
-            .Normal "Z"
-        End With
-        """
-        print(f"  Port type: Discrete")
-        print(f"  Excitation mode: Coaxial")
-
-    project.model3d.add_to_history(f"Add {port_type.lower()} port", port_history)
-    print()
-
-    # Step 11: Set simulation time
-    print("Step 11: Setting simulation time...")
-
-    time_history = f"""
-    With Fdtd
-        .Reset
-        .Name "max_time"
-        .MaxTime 400000
-    End With
-    """
-
-    project.model3d.add_to_history("Set simulation time: 400000 ps", time_history)
-    print("  Max simulation time: 400000 ps (0.4 ns)")
-    print()
-
-    # Step 12: Configure adaptivity
-    print("Step 12: Setting adaptivity...")
-
-    adaptivity_history = """
-    With Fdtd
-        .Reset
-        .Name "adaptivity"
-        .Type "Sweep"
-    End With
-    """
-
-    project.model3d.add_to_history("Set adaptivity: Sweep", adaptivity_history)
-    print("  Adaptivity: Sweep")
-    print()
-
     # Summary
     print("=" * 60)
     print("Antenna Creation Complete!")
@@ -361,11 +288,7 @@ def main():
         default=".",
         help="Output path for CST project files"
     )
-    # parser.add_argument(
-    #     "--create-single", "-c",
-    #     action="store_true",
-    #     help="Create single antenna with default parameters"
-    # )
+    
     parser.add_argument(
         "--parametric", "-p",
         action="store_true",
@@ -384,15 +307,6 @@ def main():
         patch_width_mm=38.0,
         substrate_thickness_mm=substrate_thickness_mm,
     )
-
-    # if args.create_single:
-        
-    # else:
-    #     # Default: create single antenna
-    #     create_patch_antenna_external(
-    #         #substrate_material="FR-4",
-    #         output_path=args.output
-    #     )
 
 
 if __name__ == "__main__":
