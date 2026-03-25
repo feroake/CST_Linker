@@ -72,6 +72,9 @@ def create_patch_antenna_external(
     print(f"  Project saved to: {save_path}")
     print()
 
+    # 
+
+
     # Step 3: Create substrate
     print("Step 3: Creating substrate layer...")
     substrate_thickness = substrate_thickness_mm
