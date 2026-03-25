@@ -1,0 +1,20 @@
+{
+    "general": {
+        "version": "2025.0",
+        "date": "2024-08-30",
+        "acis": "34.0.1",
+        "buildnumber": "20240830",
+        "project_type": "MWS",
+        "length": "mm",
+        "frequency": {
+            "unit": "GHz",
+            "minimum": "0",
+            "maximum": "0",
+            "minimum_expr": "0.0",
+            "maximum_expr": "0.0"
+        },
+        "time": "ns",
+        "created": "2025.0|34.0.1|20240830"
+    },
+    "history": null
+}
