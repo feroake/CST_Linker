@@ -183,66 +183,7 @@ def create_patch_antenna_external(
     print(f"  Patch: {substrate_material} ({patch_length_mm} x {patch_width_mm} mm)")
     print()
 
-    # Step 7: Add air box
-    print("Step 7: Adding air box...")
-
-    air_x = ground_x_mm + 20
-    air_y = ground_y_mm + 20
-    air_z = substrate_thickness + patch_length_mm/2 + 10
-
-    air_history = f"""
-    With Brick
-        .Reset
-        .Name "air_box"
-        .Component "component1"
-        .Material "AIR"
-        .Xrange "- {air_x/2}", " {air_x/2}"
-        .Yrange "- {air_y/2}", " {air_y/2}"
-        .Zrange "- {air_z/2}", " {air_z/2}"
-        .Create
-    End With
-    """
-
-    project.model3d.add_to_history("Add air box", air_history)
-    print(f"  Air box: {air_x} x {air_y} x {air_z} mm")
-    print()
-
-    # Step 8: Configure FDTD solver
-    print("Step 8: Configuring FDTD solver...")
-
-    solver_history = """
-    With Fdtd
-        .Reset
-        .Name "setup1"
-        .Setup
-        .Boundary "PeriodicX", "PeriodicY", "PMLZ"
-        .Source "Port1"
-        .Solver "FDTD"
-    End With
-    """
-
-    project.model3d.add_to_history("Configure FDTD solver", solver_history)
-    print("  Solver: FDTD (Time Domain)")
-    print("  Boundaries: PeriodicX, PeriodicY, PMLZ")
-    print()
-
-    # Step 9: Set frequency range
-    print("Step 9: Setting frequency range...")
-
-    freq_history = f"""
-    With Fdtd
-        .Reset
-        .Name "freq_range"
-        .FreqStart {frequency_start_GHz}
-        .FreqEnd {frequency_end_GHz}
-        .FreqResolution 0
-    End With
-    """
-
-    project.model3d.add_to_history(f"Set frequency range: {frequency_start_GHz}-{frequency_end_GHz} GHz", freq_history)
-    print(f"  Frequency: {frequency_start_GHz}-{frequency_end_GHz} GHz")
-    print()
-
+    
     # Step 10: Add port
     print("Step 10: Adding port...")
 
