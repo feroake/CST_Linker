@@ -9,6 +9,7 @@ This example shows:
 3. Configuring simulation settings
 4. Saving and running the simulation
 """
+#py "C:\Users\Avinash\Documents\myProject_Stuff\cst_linker\example_script.py" --output "C:\Users\Avinash\Documents\myProject_Stuff\cst_linker\external"
 
 import os
 #import sys
@@ -25,16 +26,12 @@ import cst.interface
 
 def create_patch_antenna_external(
     #substrate_material: str,
-    output_path: str = ".",
-    patch_length_mm: float = 25.0,
-    patch_width_mm: float = 25.0,
-    substrate_thickness_mm: float = 1.52,
-    ground_x_mm: float = 50.0,
-    ground_y_mm: float = 50.0,
-    frequency_start_GHz: float = 2.0,
-    frequency_end_GHz: float = 6.0,
+    patch_length_mm: float,
+    patch_width_mm: float,
+    substrate_thickness_mm: float,
     port_type: str = "Waveguide",
-    excitation_mode: str = "H01"
+    excitation_mode: str = "H01",
+    output_path: str = ".",
 ) -> None:
     """
     Create a patch antenna using external scripting.
@@ -50,15 +47,9 @@ def create_patch_antenna_external(
     print()
 
     # Step 1: Initialize DesignEnvironment
-    print("Step 1: Initializing DesignEnvironment...")
-    print("  This connects to the CST Studio environment.")
     design_env = cst.interface.DesignEnvironment()
-    print("  DesignEnvironment initialized successfully.")
-    print()
-
+    
     # Step 2: Create and save MWS project
-    print("Step 2: Creating MWS project...")
-
     # Create new MWS (Microwave Studio) project
     project = design_env.new_mws()
 
@@ -72,17 +63,25 @@ def create_patch_antenna_external(
     print(f"  Project saved to: {save_path}")
     print()
 
-    # 
-
-
+    # Set the units
+    unit_history = f"""
+    With Units
+        .SetUnit "Length", "mm"
+        .SetUnit "Frequency", "GHz"
+        .SetUnit "Voltage", "V"
+        .SetUnit "Resistance", "Ohm"
+        .SetUnit "Inductance", "nH"
+        .SetUnit "Temperature",  "degC"
+        .SetUnit "Time", "ns"
+        .SetUnit "Current", "A"
+        .SetUnit "Conductance", "S"
+        .SetUnit "Capacitance", "pF"
+    End With
+    """
+    project.model3d.add_to_history("Set units", unit_history)
+    
     # Step 3: Create substrate
-    print("Step 3: Creating substrate layer...")
     substrate_thickness = substrate_thickness_mm
-
-    # Calculate dimensions (centered)
-    substrate_x = ground_x_mm / 2
-    substrate_y = ground_y_mm / 2
-
     # Build history command for substrate
     substrate_history = f"""
     With Material
@@ -123,6 +122,8 @@ def create_patch_antenna_external(
     project.model3d.add_to_history("Create substrate material", substrate_history)
 
     substrate_material = "FR-4 (lossy)"
+    substrate_width = 2 * patch_width_mm
+    substrate_length = 2 * patch_length_mm
 
     substrate_history = f"""
     With Brick
@@ -130,23 +131,17 @@ def create_patch_antenna_external(
         .Name "substrate"
         .Component "component1"
         .Material "{substrate_material}"
-        .Xrange "- {substrate_x}", " {substrate_x}"
-        .Yrange "- {substrate_y}", " {substrate_y}"
-        .Zrange "- {substrate_thickness/2}", " {substrate_thickness/2}"
+        .Xrange "- {substrate_width/2}", " {substrate_width/2}"
+        .Yrange "- {substrate_length/2}", " {substrate_length/2}"
+        .Zrange " {0.035}", " {0.035+substrate_thickness}"
         .Create
     End With
     """
-
     # Add to history list
     project.model3d.add_to_history("Create substrate", substrate_history)
-    print(f"  Substrate: {substrate_material} ({substrate_thickness} mm thick)")
-    print()
 
     # Step 4: Create ground plane
-    print("Step 4: Creating ground plane...")
-
-    # Ground plane (PEC, slightly larger than substrate)
-    ground_thickness = 0.1
+    ground_thickness = 0.035
 
     ground_history = f"""
     With Brick
@@ -154,39 +149,120 @@ def create_patch_antenna_external(
         .Name "ground_plane"
         .Component "component1"
         .Material "Copper (annealed)"
-        .Xrange "- {ground_x_mm/2}", " {ground_x_mm/2}"
-        .Yrange "- {ground_y_mm/2}", " {ground_y_mm/2}"
-        .Zrange "- {ground_thickness/2}", " {ground_thickness/2}"
+        .Xrange "- {substrate_width/2}", " {substrate_width/2}"
+        .Yrange "- {substrate_length/2}", " {substrate_length/2}"
+        .Zrange " {0}", " {ground_thickness}"
         .Create
     End With
     """
-
     project.model3d.add_to_history("Create ground plane", ground_history)
-    print(f"  Ground: PEC ({ground_x_mm} x {ground_y_mm} mm)")
-    print()
 
     # Step 5: Create dielectric patch
-    print("Step 5: Creating dielectric patch...")
-
-    # Patch is the radiating element
     patch_history = f"""
     With Brick
         .Reset
         .Name "patch"
         .Component "component1"
         .Material "Copper (annealed)"
-        .Xrange "- {patch_length_mm/2}", " {patch_length_mm/2}"
-        .Yrange "- {patch_width_mm/2}", " {patch_width_mm/2}"
-        .Zrange "- {patch_length_mm/4}", " {patch_length_mm/4}"
+        .Xrange "- {patch_width_mm/2}", " {patch_width_mm/2}"
+        .Yrange "- {patch_length_mm/2}", " {patch_length_mm/2}"
+        .Zrange " {0.035 + substrate_thickness}", " {0.035 + 0.035 + substrate_thickness}"
         .Create
     End With
     """
-
     project.model3d.add_to_history("Create patch", patch_history)
-    print(f"  Patch: {substrate_material} ({patch_length_mm} x {patch_width_mm} mm)")
-    print()
 
+    # Step 6: Create Microstrip
+    MW = 2.86
+    microstrip_history = f"""
+    With Brick
+        .Reset 
+        .Name "microstrip" 
+        .Component "component1" 
+        .Material "Copper (annealed)" 
+        .Xrange "- {2.86/2}", " {2.86/2}"
+        .Yrange "- {patch_length_mm/2}", "- {substrate_length/2}" 
+        .Zrange " {0.035 + substrate_thickness}", " {0.035 + 0.035 + substrate_thickness}"
+        .Create
+    End With
+    """
     
+    project.model3d.add_to_history("Create microstrip", microstrip_history)
+
+    # Step 7: Create Insets
+    inset_history = f"""
+    With Material
+        .Reset
+        .Name "Vacuum"
+        .Folder ""
+        .FrqType "all"
+        .Type "Normal"
+        .SetMaterialUnit "Hz", "mm"
+        .Epsilon "1.0"
+        .Mu "1.0"
+        .Kappa "0"
+        .TanD "0.0"
+        .TanDFreq "0.0"
+        .TanDGiven "False"
+        .TanDModel "ConstKappa"
+        .KappaM "0"
+        .TanDM "0.0"
+        .TanDMFreq "0.0"
+        .TanDMGiven "False"
+        .TanDMModel "ConstKappa"
+        .DispModelEps "None"
+        .DispModelMu "None"
+        .DispersiveFittingSchemeEps "General 1st"
+        .DispersiveFittingSchemeMu "General 1st"
+        .UseGeneralDispersionEps "False"
+        .UseGeneralDispersionMu "False"
+        .Rho "0"
+        .ThermalConductivity "0"
+        .SetActiveMaterial "all"
+        .Colour "0.5", "0.8", "1"
+        .Wireframe "False"
+        .Transparency "0"
+        .Create
+    End With
+    """
+    project.model3d.add_to_history("Create inset material", inset_history)
+
+    InL = 9
+    InW = 0.74
+    inset_history = f"""
+    With Brick
+        .Reset 
+        .Name "inset1"
+        .Component "component1" 
+        .Material "Vacuum" 
+        .Xrange "- {MW/2}", "- {MW/2 + InW}" 
+        .Yrange "- {patch_length_mm/2 - InL}", "- {patch_length_mm / 2}" 
+        .Zrange " {0.035 + substrate_thickness}", " {0.035 + 0.035 + substrate_thickness}"
+        .Create
+    End With
+    """
+    project.model3d.add_to_history("Create inset1", inset_history)
+    boolean_history = f""" Solid.Subtract "component1:patch", "component1:inset1" """
+    project.model3d.add_to_history("Create subtract inset1", boolean_history)
+
+    inset_history = f"""
+    With Brick
+        .Reset 
+        .Name "inset2" 
+        .Component "component1" 
+        .Material "Vacuum" 
+        .Xrange " {MW/2}", " {MW/2 + InW}" 
+        .Yrange "- {patch_length_mm/2 - InL}", "- {patch_length_mm / 2}" 
+        .Zrange " {0.035 + substrate_thickness}", " {0.035 + 0.035 + substrate_thickness}"
+        .Create
+    End With
+    """
+    project.model3d.add_to_history("Create inset2", inset_history)
+    boolean_history = f""" Solid.Subtract "component1:patch", "component1:inset2" """
+    project.model3d.add_to_history("Create subtract inset2", boolean_history)
+
+
+
     # Step 10: Add port
     print("Step 10: Adding port...")
 
@@ -273,55 +349,6 @@ def create_patch_antenna_external(
     print()
 
 
-def parametric_patch_studies(output_path: str = ".") -> None:
-    """
-    Create multiple patch antennas with different parameters.
-
-    Demonstrates how to create parametric studies externally.
-    """
-    print("=" * 60)
-    print("Parametric Patch Antenna Studies")
-    print("=" * 60)
-    print()
-
-    # Define parametric ranges
-    patch_lengths = [20.0, 25.0, 30.0]
-    patch_widths = [20.0, 25.0, 30.0]
-    substrate_thicknesses = [1.52, 0.787]
-    substrate_materials = ["FR4", "Rogers_RO4003C"]
-
-    # Create parametric study
-    for length in patch_lengths:
-        for width in patch_widths:
-            for thickness in substrate_thicknesses:
-                for material in substrate_materials:
-                    # Create unique output path
-                    folder = os.path.join(output_path, f"parametric_{material}")
-                    os.makedirs(folder, exist_ok=True)
-
-                    project_name = f"patch_{length}x{width}mm_{thickness}mm_{material}.cstprj"
-                    save_path = os.path.join(folder, project_name)
-
-                    try:
-                        create_patch_antenna_external(
-                            output_path=folder,
-                            patch_length_mm=length,
-                            patch_width_mm=width,
-                            substrate_thickness_mm=thickness,
-                            substrate_material=material,
-                            ground_x_mm=40.0,
-                            ground_y_mm=40.0,
-                            frequency_start_GHz=1.0,
-                            frequency_end_GHz=18.0,
-                            port_type="Waveguide",
-                            excitation_mode="H01"
-                        )
-
-                    except Exception as e:
-                        print(f"  ERROR creating {project_name}: {e}")
-                        continue
-
-
 def main():
     """Main entry point for examples."""
     import argparse
@@ -334,11 +361,11 @@ def main():
         default=".",
         help="Output path for CST project files"
     )
-    parser.add_argument(
-        "--create-single", "-c",
-        action="store_true",
-        help="Create single antenna with default parameters"
-    )
+    # parser.add_argument(
+    #     "--create-single", "-c",
+    #     action="store_true",
+    #     help="Create single antenna with default parameters"
+    # )
     parser.add_argument(
         "--parametric", "-p",
         action="store_true",
@@ -346,23 +373,26 @@ def main():
     )
 
     args = parser.parse_args()
+    print("=" * 60)
+    print("Enter parametric values")
+    patch_length_mm = float(input("Enter patch length in mm:"))
+    substrate_thickness_mm = float(input("Enter substrate height in mm:"))
+    
+    create_patch_antenna_external(
+        output_path=args.output,
+        patch_length_mm=patch_length_mm,
+        patch_width_mm=38.0,
+        substrate_thickness_mm=substrate_thickness_mm,
+    )
 
-    if args.create_single:
-        create_patch_antenna_external(
-            output_path=args.output,
-            patch_length_mm=25.0,
-            patch_width_mm=25.0,
-            substrate_thickness_mm=1.52,
-            #substrate_material="FR-4"
-        )
-    #elif args.parametric:
-        #parametric_patch_studies(output_path=args.output)
-    else:
-        # Default: create single antenna
-        create_patch_antenna_external(
-            #substrate_material="FR-4",
-            output_path=args.output
-        )
+    # if args.create_single:
+        
+    # else:
+    #     # Default: create single antenna
+    #     create_patch_antenna_external(
+    #         #substrate_material="FR-4",
+    #         output_path=args.output
+    #     )
 
 
 if __name__ == "__main__":
