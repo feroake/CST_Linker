@@ -18,6 +18,10 @@ Python script to automate the process of making antennas. Using CST Studio Suite
 - *run the external script*
 - `py "*<Path\to\external\script>*"`
 
+## Table of parameters
+<img width="1007" height="811" alt="image" src="https://github.com/user-attachments/assets/2b30d953-5fea-455f-bbd6-71aebc469dbc" />
+
+
 ## Overview
 
 This script uses CST's external Python scripting model to:
