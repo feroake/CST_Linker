@@ -1,3 +1,7 @@
+
+
+https://github.com/user-attachments/assets/29ad2391-8253-4f21-bb51-e2d0ecf967d1
+
 # CST_Linker
 Python script to automate the process of making antennas. Using CST Studio Suite 2025. Done with the help of claude qwen 3.5 local instance.
 
@@ -132,15 +136,6 @@ Ensure CST Studio is running. The DesignEnvironment requires an active CST licen
 
 This script is provided as-is for use with CST Studio Suite. Refer to CST's licensing terms for redistribution.
 
-## Support
+Uploading Screen Recording 2026-03-28 144741.mp4…
 
-For issues:
-1. Check CST documentation: https://support.cst.com
-2. Review CST API documentation
-3. Open GitHub issue for CST Studio Suite
 
-## References
-
-- CST Python API: https://support.cst.com/ss/cst2022/help/Python_External_Scripting.html
-- External Scripting Methodology: https://blog.technia.com/en/simulation/cst-studio-suite-python-scripting
-- CST Studio Suite: https://www.cst.com/products/cst-studio-suite
